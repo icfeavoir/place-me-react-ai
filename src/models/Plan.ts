@@ -50,6 +50,11 @@ export class Plan {
     if (this.isForbiddenSeatAt(line, col)) {
       throw new Error(`Seat at line ${line} col ${col} is forbidden`);
     }
+    
+    const alreadyTaken = this.getGroupMemberAt(line, col);
+    if (alreadyTaken) {
+      throw new Error(`Seat at line ${line} col ${col} is already taken by ${alreadyTaken.groupName}`);
+    }
 
     this._grid[line][col] = groupMember;
   }
