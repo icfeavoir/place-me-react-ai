@@ -10,7 +10,7 @@ export type GroupMemberType = {
 
 export type GridType = Array<Array<GroupMemberType | null>>;
 
-export type ForbiddenSeat = {
+export type Seat = {
   line: number;
   col: number;
 }

@@ -1,4 +1,4 @@
-import { ForbiddenSeat, GridSizeType, GridType, GroupMemberType } from "../types/types";
+import { Seat, GridSizeType, GridType, GroupMemberType } from "../types/types";
 import { Group } from "./Group";
 
 export class Plan {
@@ -6,10 +6,10 @@ export class Plan {
   private _grid: GridType;
   private _gridSize: GridSizeType;
   private _groups: Group[];
-  private _forbiddenSeats: ForbiddenSeat[];
+  private _forbiddenSeats: Seat[];
   private _score: number;
 
-  constructor(gridSize: GridSizeType, groups: Group[], forbiddenSeats: ForbiddenSeat[]) {
+  constructor(gridSize: GridSizeType, groups: Group[], forbiddenSeats: Seat[]) {
     this._groups = groups;
     this._gridSize = gridSize;
     this._forbiddenSeats = forbiddenSeats;
@@ -38,25 +38,64 @@ export class Plan {
     return this._score;
   }
 
-  get forbiddenSeats(): ForbiddenSeat[] {
+  get forbiddenSeats(): Seat[] {
     return this._forbiddenSeats;
   }
 
-  getGroupMemberAt(line: number, col: number): GroupMemberType | null {
-    return this._grid?.[line]?.[col];
+  getGroupMemberAt(seat: Seat): GroupMemberType | null {
+    return this._grid?.[seat.line]?.[seat.col];
   }
 
-  setGroupMemberAt(line: number, col: number, groupMember: GroupMemberType) {
-    if (this.isForbiddenSeatAt(line, col)) {
-      throw new Error(`Seat at line ${line} col ${col} is forbidden`);
+  /**
+   * Retourne tous les sièges occupés par un groupe
+   * @param group 
+   */
+  private getGroupSeats(group: Group): Seat[] {
+    const groupSeats: Seat[] = [];
+
+    this._grid.forEach((line, lineIndex) => {
+      line.forEach((groupMember, colIndex) => {
+        if (groupMember?.groupName === group.name) {
+          groupSeats.push({ line: lineIndex, col: colIndex });
+        }
+      });
+    });
+
+    return groupSeats;
+  }
+
+  isSeatAvailable(seat: Seat): boolean {
+    return this.getGroupMemberAt(seat) === null;
+  }
+
+  isSeatTaken(seat: Seat): boolean {
+    return !this.isSeatAvailable(seat);
+  }
+
+  setGroupMemberAt(seat: Seat, groupMember: GroupMemberType) {
+    if (this.isForbiddenSeatAt(seat.line, seat.col)) {
+      throw new Error(`Seat at line ${seat.line} col ${seat.col} is forbidden`);
     }
     
-    const alreadyTaken = this.getGroupMemberAt(line, col);
+    const alreadyTaken = this.getGroupMemberAt(seat);
     if (alreadyTaken) {
-      throw new Error(`Seat at line ${line} col ${col} is already taken by ${alreadyTaken.groupName}`);
+      throw new Error(`Seat at line ${seat.line} col ${seat.col} is already taken by ${alreadyTaken.groupName}`);
     }
 
-    this._grid[line][col] = groupMember;
+    this._grid[seat.line][seat.col] = groupMember;
+  }
+
+  /**
+   * Affecte un groupe à une liste de sièges
+   * @param { Group } group 
+   * @param { Seat[] } seats
+   */
+  private setGroupSeats(group: Group, seats: Seat[]) {
+    const groupMember: GroupMemberType = {
+      groupName: group.name,
+      groupColor: group.color,
+    }
+    seats.forEach((seat) => this.setGroupMemberAt(seat, groupMember));
   }
 
   /**
@@ -84,11 +123,21 @@ export class Plan {
    * Place aléatoirement les groupes
    */
   public generateRandomPlan() {
+    this.fillMissingGroups(this._groups);
+    this.calculateScore();
+  }
+  
+  /**
+   * Place des groupe aléatoirement à des places libres
+   * (les groupes sont placés ensemble)
+   * @param missingGroups Les groupes qui doivent être placés
+   */
+  private fillMissingGroups(missingGroups: Group[]) {
     // random line and col
     let line = Math.floor(Math.random() * this._gridSize.height);
     let col = Math.floor(Math.random() * this._gridSize.width);
 
-    this._groups.forEach(group => {
+    missingGroups.forEach(group => {
       let remainingGroupMembers = group.nb;
 
       const groupMember: GroupMemberType = {
@@ -96,14 +145,24 @@ export class Plan {
         groupColor: group.color,
       }
 
+      let tries = 0;
       while (remainingGroupMembers > 0) {
         try {
           // On place la personne à la place aléatoire
-          this.setGroupMemberAt(line, col, groupMember); 
+          const seat = { line, col };
+          this.setGroupMemberAt(seat, groupMember); 
           // On décrémente le nombre de personnes restantes
           remainingGroupMembers--;
-        } catch(e) {
+          // On remet les essaies à 0
+          tries = 0;
+        } catch (e) {
           // si la place est interdite, on continue pour placer ensuite
+          // Sauf si on a essayé toutes les places
+          tries++;
+          const nbSeats = this._gridSize.width * this._gridSize.height;
+          if (tries > nbSeats) {
+            throw new Error('too many tries: population bigger than Plan');
+          }
         }
 
         // On décale la colonne
@@ -120,8 +179,6 @@ export class Plan {
         }
       }
     });
-
-    this.calculateScore();
   }
 
   /**
@@ -129,7 +186,6 @@ export class Plan {
    */
   calculateScore() {
     let currentScore = 0;
-    // currentScore -= Infinity;
 
     const LEFT_RIGHT = +10;
     const TOP_BOTTOM = +5;
@@ -137,10 +193,10 @@ export class Plan {
     this._grid.forEach((line, lineIndex) => {
       line.forEach((groupMember, colIndex) => {
         if (groupMember) {
-          const groupMemberRight = this.getGroupMemberAt(lineIndex, colIndex + 1);
-          const groupMemberLeft = this.getGroupMemberAt(lineIndex, colIndex - 1);
-          const groupMemberTop = this.getGroupMemberAt(lineIndex + 1, colIndex);
-          const groupMemberBottom = this.getGroupMemberAt(lineIndex - 1, colIndex);
+          const groupMemberRight = this.getGroupMemberAt({ line: lineIndex, col: colIndex + 1 });
+          const groupMemberLeft = this.getGroupMemberAt({ line: lineIndex, col: colIndex - 1 });
+          const groupMemberTop = this.getGroupMemberAt({ line: lineIndex + 1, col: colIndex });
+          const groupMemberBottom = this.getGroupMemberAt({ line: lineIndex - 1, col: colIndex });
 
           if (groupMemberRight?.groupName === groupMember.groupName) {
             currentScore += LEFT_RIGHT;
@@ -164,23 +220,70 @@ export class Plan {
     this._score = currentScore;
   }
 
+  clone(): Plan {
+    const plan = new Plan(this._gridSize, this._groups, this._forbiddenSeats);
+    plan._grid = this._grid.map(line => line.map(groupMember => groupMember));
+    plan.calculateScore();
+
+    return plan;
+  }
+
   static createFromParents(father: Plan, mother: Plan): Plan {
     const gridSize = {
       width: father.width,
       height: father.height,
     }
+    const childPlan = new Plan(gridSize, father._groups, father._forbiddenSeats);
 
-    const plan = new Plan(gridSize, father._groups, father._forbiddenSeats);
-
-    // on place les groupes aléatoirement
-    const chooseFromFather = true;
-    const continuePlacing = true;
+    // On choisit qui va commencer (père ou mère)
+    let isFatherTurn = Math.random() < 0.5;
 
 
-    // while (continuePlacing) {
-    //   continuePlacing = false;
-    // }
+    const groups = [...father._groups];
+    let remainingGroups = [...groups];
+    
+    groups.forEach((group) => {
+      // alterne père / mère
+      let usedPlan: Plan = isFatherTurn ? father : mother;
+      const seats: Seat[] = usedPlan.getGroupSeats(group);
 
-    return plan;
+      // check if all seats are available
+      const canPlaceGroup = !seats.some((seat) => childPlan.isSeatTaken(seat));
+
+      if (canPlaceGroup) {
+        childPlan.setGroupSeats(group, seats);
+        remainingGroups = remainingGroups.filter((g) => g !== group);
+        // change parent turn if success
+        isFatherTurn = !isFatherTurn;
+      }
+
+    })
+
+    // put groups that have not been placed
+    childPlan.fillMissingGroups(remainingGroups);
+
+    childPlan.calculateScore();
+
+    return childPlan;
+  }
+
+  toString(): string {
+    let text = '';
+    this.grid.forEach((line, lineIndex) => {
+      line.forEach((groupMember, colIndex) => {
+        if (groupMember) {
+          let name = groupMember.groupName
+          while (name.length < 6) {
+            name += ' ';
+          }
+          text += ` ${name} |`;
+        } else {
+          text += '        |';
+        }
+      });
+      text += '\n';
+    });
+
+    return `SCORE ${this.score}\n${text}`;
   }
 };

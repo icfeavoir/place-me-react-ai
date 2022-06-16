@@ -2,7 +2,7 @@ import './App.css';
 import React from 'react';
 import { Group } from './models/Group';
 import { Plan } from './models/Plan';
-import { ForbiddenSeat, GridSizeType } from './types/types';
+import { Seat, GridSizeType } from './types/types';
 import { PlanDisplay } from './views/PlanDisplay';
 import { GAService } from './services/ga.service';
 
@@ -18,7 +18,7 @@ const GROUPS = [
   new Group("Maingu", 2),
   new Group("Bour.R", 2),
   new Group("Coll.J", 8),
-  new Group("Meun.V", 16),
+  // new Group("Meun.V", 16),
   new Group("Leme.H", 3),
   new Group("Vall.M", 2),
   new Group("Lero.E", 2),
@@ -26,20 +26,20 @@ const GROUPS = [
   new Group("Jupin", 2),
   new Group("Pean.A", 2),
   new Group("Bett.A", 9),
-  new Group("Pins.V  ", 10),
+  new Group("Pins.V", 10),
   new Group("Pott.N", 2),
   new Group("Remi p", 3),
   new Group("Epro.I", 6),
   new Group("Doue.K", 1),
   new Group("Dilis", 3),
   new Group("Rondea", 1),
-  // new Group("Delcou", 4),
-  // new Group("Jarr.V", 2),
-  // new Group("Epro.M", 5),
-  // new Group("Gibon", 6),
+  new Group("Delcou", 4),
+  new Group("Jarr.V", 2),
+  new Group("Epro.M", 5),
+  new Group("Gibon", 6),
   // new Group("Lang.P  ", 19),
   // new Group("Dane.D", 2),
-  // new Group("Techer", 4),
+  new Group("Techer", 4),
   // new Group("Pier.J", 5),
   // new Group("Pillai", 7),
   // new Group("Less.B", 1),
@@ -47,14 +47,20 @@ const GROUPS = [
   // new Group("Les vieux", 33),
 ];
 
-const FORBIDDEN_SEATS: ForbiddenSeat[] = [
-  { line: 0, col: 4},
-  { line: 0, col: 5},
-  { line: 5, col: 8},
+const FORBIDDEN_SEATS: Seat[] = [
+  // { line: 0, col: 4},
+  // { line: 0, col: 5},
+  // { line: 5, col: 8},
 ]
 
+// nombre initial de plans
 const NB_PLANS = 100;
-const NB_REPRODUCTIONS = 20;
+// nombre de survivants par génération (en %)
+const SURVIVOR_PERCENT = 1;  // 0.5;
+// nombre de nouveaux plan à chaque génération (tjr avoir le même nb de plan)
+const NB_REPRODUCTIONS = 20;  // 0.5 * NB_PLANS;
+// nombre de générations
+const NB_GENERATIONS = 100;
 
 type AppData = {
   plans: Plan[];
@@ -72,11 +78,10 @@ class App extends React.Component<{}, AppData> {
     const plans = Array.from({length: NB_PLANS }, () => new Plan(gridSize, GROUPS, FORBIDDEN_SEATS));
     plans.forEach((plan) => { plan.generateRandomPlan() });
 
-    this.gaService = new GAService(NB_REPRODUCTIONS);
-    this.gaService.plans = plans;
+    this.gaService = new GAService();
 
     // Plan avec le meilleur score
-    const bestPlan = plans.reduce((prev, current) => current?.score > prev?.score ? current : prev);
+    const bestPlan = this.gaService.sortPlans(plans)?.[0];
 
     this.state = {
       plans,
@@ -98,8 +103,19 @@ class App extends React.Component<{}, AppData> {
   }
 
   private reproduce = () => {
-    this.setState({ reproducing: true });
-    const newPlans = this.gaService.reproduce();
+    if (!this.state.reproducing) {
+      this.setState({ reproducing: true });
+
+      let plans = this.state.plans;
+      let bestPlan = plans[0];
+
+      for (let i = 0; i < NB_GENERATIONS; i++) {
+        plans = this.gaService.reproduce(plans, SURVIVOR_PERCENT, NB_REPRODUCTIONS,);
+        bestPlan = plans[0];
+      }
+      this.setState({ reproducing: false });
+      console.log(bestPlan.toString());
+    }
   }
 
   render() {

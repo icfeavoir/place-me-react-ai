@@ -2,31 +2,12 @@ import { Plan } from "../models/Plan";
 
 export class GAService {
 
-  private NB_REPRODUCTIONS: number;
-  private _plans: Plan[];
-
-
-  constructor(NB_REPRODUCTIONS: number) {
-    this.NB_REPRODUCTIONS = NB_REPRODUCTIONS;
-    this._plans = [];
+  sortPlans(plans: Plan[]) {
+    return plans.sort((a, b) => b.score - a.score );
   }
 
-  get plans(): Plan[] {
-    return this._plans;
-  }
-
-  set plans(plans: Plan[]) {
-    this._plans = plans;
-  }
-
-  private sortPlans() {
-    this._plans = this._plans.sort((a, b) => {
-      return a.score - b.score;
-    });
-  }
-
-  private keepOnly(nb: number) {
-    this._plans = this._plans.slice(0, nb);
+  keepOnly(plans: Plan[], toKeep: number) {
+    return plans.slice(0, toKeep);
   }
 
   /**
@@ -34,41 +15,57 @@ export class GAService {
    * Chaque plan de la liste peut être choisi, mais plus son score est bon,
    * plus sa prob d'être choisie est grande.
    */
-  private rouletteWheelSelection(): Plan {
-    this.keepOnly(this._plans.length * 0.8);
-    this.sortPlans();
+  private rouletteWheelSelection(plans: Plan[]): Plan {
+    const sortedPlans = this.sortPlans(plans);
 
     // par défaut, on choisit le premier plan
-    let selectedPlan: Plan = this.plans[0];
+    let selectedPlan: Plan = sortedPlans[0];
 
-    const sumScore = this._plans.reduce((acc, plan) => acc + plan.score, 0);
+    const sumScore = sortedPlans.reduce((acc, plan) => acc + plan.score, 0);
     const choosedScore = Math.floor(Math.random() * sumScore);
 
     let scoreCounter = 0
-    this.plans.every(plan => {
+    sortedPlans.every(plan => {
       scoreCounter += plan.score
       // retourne une copie
       if (scoreCounter >= choosedScore) {
         selectedPlan = plan;
+        // every doit retourner false pour arrêter la boucle
         return false;
       }
-      // every doit retourner false pour arrêter la boucle
-      return false;
+      return true;
     });
 
-    console.log(`Choosed plan with score ${selectedPlan.score}`);
     return selectedPlan;
   }
 
   /**
    * Création de nouveaux plans à partir des plans existants
    */
-  reproduce() {
-    for (let i = 0; i < this.NB_REPRODUCTIONS; i++) {
-      const mother = this.rouletteWheelSelection();
-      const father = this.rouletteWheelSelection();
-      const newPlan = Plan.createFromParents(father, mother);
+  reproduce(plans: Plan[], SURVIVOR_PERCENT: number, NB_REPRODUCTIONS: number) {
+    // on "tue" une partie de la population
+    const bestPlans = this.sortPlans(plans);
+    const survivors = this.keepOnly(bestPlans, plans.length * SURVIVOR_PERCENT);
+
+    // le reste peut se reproduire
+    const newPlans = [];
+    for (let i = 0; i < NB_REPRODUCTIONS; i++) {
+      const father = this.rouletteWheelSelection(survivors)?.clone();
+      const mother = this.rouletteWheelSelection(survivors)?.clone();
+    
+      if (father && mother) {
+        const child = Plan.createFromParents(father, mother);
+        // console.log(`father\n${father.toString()}`);
+        // console.log(`mother\n${mother.toString()}`);
+        // console.log(`child\n${child.toString()}`);
+        newPlans.push(child);
+      }
     }
+    // après toutes les reproductions, on ajoute les plans existants à la population
+    const nextPlansGeneration = this.sortPlans([...survivors, ...newPlans]);
+    console.log('score', nextPlansGeneration.map(plan => plan.score));
+
+    return nextPlansGeneration;
   }
 
 }

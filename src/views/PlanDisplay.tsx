@@ -17,7 +17,7 @@ export const PlanDisplay: React.FC<{ plan: Plan }> = ({ plan }) => {
   }
 
   function renderCell(rowIndex: number, cellIndex: number) {
-    const group = plan.getGroupMemberAt(rowIndex, cellIndex);
+    const group = plan.getGroupMemberAt({ line: rowIndex, col: cellIndex });
     
     let backgroundColor = group?.groupColor ?? 'initial';
     if (plan.isForbiddenSeatAt(rowIndex, cellIndex)) {
