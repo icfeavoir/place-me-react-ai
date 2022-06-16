@@ -54,16 +54,13 @@ export class GAService {
       const mother = this.rouletteWheelSelection(survivors)?.clone();
     
       if (father && mother) {
-        const child = Plan.createFromParents(father, mother);
-        // console.log(`father\n${father.toString()}`);
-        // console.log(`mother\n${mother.toString()}`);
-        // console.log(`child\n${child.toString()}`);
+        const child = Plan.createFromOneParent(father);
+        // const child = Plan.createFromParents(father, mother);
         newPlans.push(child);
       }
     }
     // après toutes les reproductions, on ajoute les plans existants à la population
     const nextPlansGeneration = this.sortPlans([...survivors, ...newPlans]);
-    console.log('score', nextPlansGeneration.map(plan => plan.score));
 
     return nextPlansGeneration;
   }

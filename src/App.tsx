@@ -8,7 +8,7 @@ import { GAService } from './services/ga.service';
 
 
 const gridSize: GridSizeType = {
-  width: 10,
+  width: 16,
   height: 10
 }
 
@@ -18,7 +18,7 @@ const GROUPS = [
   new Group("Maingu", 2),
   new Group("Bour.R", 2),
   new Group("Coll.J", 8),
-  // new Group("Meun.V", 16),
+  new Group("Meun.V", 16),
   new Group("Leme.H", 3),
   new Group("Vall.M", 2),
   new Group("Lero.E", 2),
@@ -37,30 +37,30 @@ const GROUPS = [
   new Group("Jarr.V", 2),
   new Group("Epro.M", 5),
   new Group("Gibon", 6),
-  // new Group("Lang.P  ", 19),
-  // new Group("Dane.D", 2),
+  new Group("Lang.P  ", 19),
+  new Group("Dane.D", 2),
   new Group("Techer", 4),
-  // new Group("Pier.J", 5),
-  // new Group("Pillai", 7),
-  // new Group("Less.B", 1),
-  // new Group("Yver.M", 3),
+  new Group("Pier.J", 5),
+  new Group("Pillai", 7),
+  new Group("Less.B", 1),
+  new Group("Yver.M", 3),
   // new Group("Les vieux", 33),
 ];
 
 const FORBIDDEN_SEATS: Seat[] = [
-  // { line: 0, col: 4},
-  // { line: 0, col: 5},
-  // { line: 5, col: 8},
+  { line: 0, col: 4},
+  { line: 0, col: 5},
+  { line: 5, col: 8},
 ]
 
 // nombre initial de plans
 const NB_PLANS = 100;
 // nombre de survivants par génération (en %)
-const SURVIVOR_PERCENT = 1;  // 0.5;
+const SURVIVOR_PERCENT = 0.7;
 // nombre de nouveaux plan à chaque génération (tjr avoir le même nb de plan)
-const NB_REPRODUCTIONS = 20;  // 0.5 * NB_PLANS;
+const NB_REPRODUCTIONS = 35;  // 0.5 * NB_PLANS;
 // nombre de générations
-const NB_GENERATIONS = 100;
+const NB_GENERATIONS = 2000;
 
 type AppData = {
   plans: Plan[];
@@ -103,6 +103,8 @@ class App extends React.Component<{}, AppData> {
   }
 
   private reproduce = () => {
+    // mesure time
+    const begin = new Date();
     if (!this.state.reproducing) {
       this.setState({ reproducing: true });
 
@@ -114,14 +116,18 @@ class App extends React.Component<{}, AppData> {
         bestPlan = plans[0];
       }
       this.setState({ reproducing: false });
-      console.log(bestPlan.toString());
+      this.setState({ bestPlan });
+
+      const end = new Date();
+
+      console.log(`Finished in ${(end.getTime() - begin.getTime()) / 1000} seconds`);
     }
   }
 
   render() {
     return (
       <div className="App">
-        <button onClick={this.reproduce}>Reproduce</button>
+        <button onClick={this.reproduce} disabled={this.state.reproducing}>{ this.state.reproducing ? 'reproducing...' : 'Reproduce!'}</button>
         <div id="main">
           <div id="best-plan">
             <b key={this.state.bestPlan.score}>Score: {this.state.bestPlan.score}</b>

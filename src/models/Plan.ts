@@ -267,6 +267,36 @@ export class Plan {
     return childPlan;
   }
 
+  static createFromOneParent(father: Plan): Plan {
+    const gridSize = {
+      width: father.width,
+      height: father.height,
+    }
+    const childPlan = new Plan(gridSize, father._groups, father._forbiddenSeats);
+
+    const groups = [...father._groups];
+    let remainingGroups = [...groups];
+    
+    groups.forEach((group) => {
+      // probabilité d'hériter du père (sinon aléatoire)
+      const fatherInheritanceForGroup = Math.random() < 0.5;
+      
+      if (fatherInheritanceForGroup) {
+        const seats: Seat[] = father.getGroupSeats(group);
+        childPlan.setGroupSeats(group, seats);
+        remainingGroups = remainingGroups.filter((g) => g !== group);
+        // change parent turn if success
+      }
+    })
+
+    // put groups that have not been placed
+    childPlan.fillMissingGroups(remainingGroups);
+
+    childPlan.calculateScore();
+
+    return childPlan;
+  }
+
   toString(): string {
     let text = '';
     this.grid.forEach((line, lineIndex) => {
