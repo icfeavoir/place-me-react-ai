@@ -60,12 +60,17 @@ const SURVIVOR_PERCENT = 0.7;
 // nombre de nouveaux plan à chaque génération (tjr avoir le même nb de plan)
 const NB_REPRODUCTIONS = 35;  // 0.5 * NB_PLANS;
 // nombre de générations
-const NB_GENERATIONS = 2000;
+const NB_GENERATIONS = 200;
+
+type ReproduceDataType = {
+  reproducing: boolean;
+  nbReproduction: number;
+}
 
 type AppData = {
   plans: Plan[];
   bestPlan: Plan;
-  reproducing: boolean;
+  reproduceData: ReproduceDataType;
 };
 
 class App extends React.Component<{}, AppData> {
@@ -86,7 +91,7 @@ class App extends React.Component<{}, AppData> {
     this.state = {
       plans,
       bestPlan,
-      reproducing: false
+      reproduceData: { reproducing: false, nbReproduction: 0 }
     }
   }
 
@@ -105,8 +110,8 @@ class App extends React.Component<{}, AppData> {
   private reproduce = () => {
     // mesure time
     const begin = new Date();
-    if (!this.state.reproducing) {
-      this.setState({ reproducing: true });
+    if (!this.state.reproduceData.reproducing) {
+      this.setState({ reproduceData: { ...this.state.reproduceData, reproducing: true } });
 
       let plans = this.state.plans;
       let bestPlan = plans[0];
@@ -115,8 +120,8 @@ class App extends React.Component<{}, AppData> {
         plans = this.gaService.reproduce(plans, SURVIVOR_PERCENT, NB_REPRODUCTIONS,);
         bestPlan = plans[0];
       }
-      this.setState({ reproducing: false });
-      this.setState({ bestPlan });
+      this.setState({ reproduceData: { ...this.state.reproduceData, nbReproduction: this.state.reproduceData.nbReproduction + NB_GENERATIONS, reproducing: false } });
+      this.setState({ bestPlan, plans });
 
       const end = new Date();
 
@@ -127,15 +132,15 @@ class App extends React.Component<{}, AppData> {
   render() {
     return (
       <div className="App">
-        <button onClick={this.reproduce} disabled={this.state.reproducing}>{ this.state.reproducing ? 'reproducing...' : 'Reproduce!'}</button>
+        <button onClick={this.reproduce} disabled={this.state.reproduceData.reproducing}>
+          {this.state.reproduceData.reproducing ? 'reproducing...' : 'Reproduce!'}
+        </button>
+
         <div id="main">
           <div id="best-plan">
-            <b key={this.state.bestPlan.score}>Score: {this.state.bestPlan.score}</b>
+            <b key={this.state.bestPlan.score}>Score: {this.state.bestPlan.score}</b><br/>
+            <b key={this.state.reproduceData.nbReproduction}>NB GENERATION: {this.state.reproduceData.nbReproduction}</b>
             <PlanDisplay plan={this.state.bestPlan} />
-          </div>
-
-          <div id="average">
-            <b>Moyenne des scores : {this.calcAverage()}</b>
           </div>
 
         </div>
