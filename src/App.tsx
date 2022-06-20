@@ -2,7 +2,7 @@ import './App.css';
 import React from 'react';
 import { Group } from './models/Group';
 import { Plan } from './models/Plan';
-import { Seat, GridSizeType } from './types/types';
+import { Seat, GridSizeType, ConstraintSeatsType } from './types/types';
 import { PlanDisplay } from './views/PlanDisplay';
 import { GAService } from './services/ga.service';
 
@@ -11,9 +11,18 @@ const gridSize: GridSizeType = {
   height: 10
 }
 
+const CONSTRAINT_PREMIER_RANG: ConstraintSeatsType = {
+  id: 'PR',
+  seats: Array.from({ length: gridSize.width }, (_, i) => ({ line: gridSize.height - 1, col: i }))
+}
+
+const CONSTRAINT_SEATS = [
+  CONSTRAINT_PREMIER_RANG,
+]
+
 const GROUPS = [
   new Group("Madi.L", 5),
-  new Group("Leco.A", 6),
+  new Group("Leco.A", 6, { constraint: CONSTRAINT_PREMIER_RANG, nb: 6 }),
   new Group("Maingu", 2),
   new Group("Bour.R", 2),
   new Group("Coll.J", 8),
@@ -59,9 +68,9 @@ const SURVIVOR_PERCENT = 0.5;
 // nombre de nouveaux plan à chaque génération (tjr avoir le même nb de plan)
 const NB_REPRODUCTIONS = 50;  // 0.5 * NB_PLANS;
 // proba mutation
-const PROBA_MUTATION = 0.99;
+const PROBA_MUTATION = 0.9;
 // nombre de générations
-const NB_GENERATIONS = 2000;
+const NB_GENERATIONS = 1000;
 
 type ReproduceDataType = {
   reproducing: boolean;
@@ -81,7 +90,7 @@ class App extends React.Component<{}, AppData> {
   constructor(props: object) {
     super(props);
 
-    const plans = Array.from({length: NB_PLANS }, () => new Plan(gridSize, GROUPS, FORBIDDEN_SEATS));
+    const plans = Array.from({length: NB_PLANS }, () => new Plan(gridSize, GROUPS, FORBIDDEN_SEATS, CONSTRAINT_SEATS));
     plans.forEach((plan) => { plan.generateRandomPlan() });
 
     this.gaService = new GAService();

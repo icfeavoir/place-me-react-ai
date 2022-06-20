@@ -1,12 +1,20 @@
+import { COLORS } from "../types/colors";
+import { GroupConstraintType, GroupMemberType } from "../types/types";
+
 export class Group {
   private _name: string;
   private _nb: number;
   private _color: string;
+  private _groupConstraint: GroupConstraintType | null;
+  private _members: GroupMemberType[] = [];
   
-  constructor(name: string, nb: number) {
+  constructor(name: string, nb: number, groupConstraint: GroupConstraintType | null = null) {
     this._name = name;
     this._nb = nb;
     this._color = this.getRandomColor();
+    this._groupConstraint = groupConstraint;
+
+    this.generateMembers();
   }
   
   get name(): string {
@@ -20,113 +28,51 @@ export class Group {
   get color(): string {
     return this._color;
   }
+
+  get constraint(): GroupConstraintType | null {
+    return this._groupConstraint;
+  }
+
+  get members(): GroupMemberType[] {
+    return this._members;
+  }
+
+  /**
+   * Retourne un membre spécifique du groupe
+   * @param i Numéro du membre
+   * @returns {GroupMemberType}
+   */
+  getMemberNumber(i: number): GroupMemberType | null {
+    return this._members[i] ?? null;
+  }
   
-  // TODO: export in file
+  /**
+   * Définit une couleur pour le groupe
+   * @returns 
+   */
   private getRandomColor(): string {
-    const colors = [
-      'antiquewhite',
-      'aqua',
-      'aquamarine',
-      'azure',
-      'beige',
-      'bisque',
-      'blanchedalmond',
-      'brown',
-      'burlywood',
-      'chartreuse',
-      'chocolate',
-      'coral',
-      'cornsilk',
-      'crimson',
-      'cyan',
-      'deeppink',
-      'dimgray',
-      'dimgrey',
-      'firebrick',
-      'floralwhite',
-      'forestgreen',
-      'fuchsia',
-      'gainsboro',
-      'ghostwhite',
-      'gold',
-      'goldenrod',
-      'gray',
-      'green',
-      'greenyellow',
-      'grey',
-      'honeydew',
-      'hotpink',
-      'indianred',
-      'indigo',
-      'ivory',
-      'khaki',
-      'lavender',
-      'lavenderblush',
-      'lawngreen',
-      'lemonchiffon',
-      'lightcoral',
-      'lightcyan',
-      'lightgoldenrodyellow',
-      'lightgray',
-      'lightgreen',
-      'lightgrey',
-      'lightpink',
-      'lightsalmon',
-      'lightseagreen',
-      'lightslategray',
-      'lightslategrey',
-      'lightyellow',
-      'lime',
-      'limegreen',
-      'linen',
-      'magenta',
-      'maroon',
-      'mediumaquamarine',
-      'mediumorchid',
-      'mediumspringgreen',
-      'mediumturquoise',
-      'mintcream',
-      'mistyrose',
-      'moccasin',
-      'navajowhite',
-      'oldlace',
-      'olive',
-      'olivedrab',
-      'orange',
-      'orangered',
-      'orchid',
-      'palegoldenrod',
-      'palegreen',
-      'paleturquoise',
-      'papayawhip',
-      'peachpuff',
-      'peru',
-      'pink',
-      'plum',
-      'rosybrown',
-      'saddlebrown',
-      'salmon',
-      'sandybrown',
-      'seagreen',
-      'seashell',
-      'sienna',
-      'silver',
-      'slategray',
-      'slategrey',
-      'snow',
-      'springgreen',
-      'tan',
-      'teal',
-      'thistle',
-      'tomato',
-      'turquoise',
-      'wheat',
-      'white',
-      'whitesmoke',
-      'yellow',
-      'yellowgreen',
-    ];
-    const randomIndex = Math.floor(Math.random() * colors.length);
-    return colors[randomIndex];
+    const randomIndex = Math.floor(Math.random() * COLORS.length);
+    return COLORS[randomIndex];
+  }
+
+  /**
+   * Génère les membres du groupe
+   * - Affecte un numéro à chacun
+   * - Affecte une contrainte spécifique à chacun (selon le nb ayant cette contrainte)
+   */
+  private generateMembers(): void {
+    for (let i = 0; i < this._nb; i++) {
+      // Si x personnes ont la contrainte, on donne aux x premiers
+      const memberHasConstraint = this._groupConstraint && this._groupConstraint?.nb > i;
+      const member: GroupMemberType = {
+        groupName: this._name,
+        groupColor: this._color,
+        groupNb: this._nb,
+        nb: i,
+        constraint: memberHasConstraint ? (this._groupConstraint?.constraint ?? null) : null,
+      }
+
+      this._members.push(member);
+    }
   }
 }

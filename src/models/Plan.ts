@@ -1,18 +1,21 @@
-import { Seat, GridSizeType, GridType, GroupMemberType } from "../types/types";
+import { Seat, GridSizeType, GridType, GroupMemberType, ConstraintSeatsType } from "../types/types";
 import { Group } from "./Group";
 
 export class Plan {
 
   private _grid: GridType;
+  private _score: number;
+
   private _gridSize: GridSizeType;
   private _groups: Group[];
   private _forbiddenSeats: Seat[];
-  private _score: number;
+  private _constraintSeats: ConstraintSeatsType[];
 
-  constructor(gridSize: GridSizeType, groups: Group[], forbiddenSeats: Seat[]) {
+  constructor(gridSize: GridSizeType, groups: Group[], forbiddenSeats: Seat[], constraintSeats: ConstraintSeatsType[]) {
     this._groups = groups;
     this._gridSize = gridSize;
     this._forbiddenSeats = forbiddenSeats;
+    this._constraintSeats = constraintSeats;
 
     this._grid = [];
     this._score = 0;
@@ -87,8 +90,8 @@ export class Plan {
     }
     
     const alreadyTaken = this.getGroupMemberAt(seat);
-    // on peut écraser que par null
-    if (alreadyTaken && groupMember !== null) {
+    // on ne peut pas écraser
+    if (alreadyTaken) {
       throw new Error(`Seat at line ${seat.line} col ${seat.col} is already taken by ${alreadyTaken.groupName}`);
     }
 
@@ -100,7 +103,7 @@ export class Plan {
    * @param seat 
    */
   emptySeat(seat: Seat) {
-    this.setGroupMemberAt(seat, null);
+    this._grid[seat.line][seat.col] = null;
   }
 
   /**
@@ -109,12 +112,11 @@ export class Plan {
    * @param { Seat[] } seats
    */
   private setGroupSeats(group: Group, seats: Seat[]) {
-    const groupMember: GroupMemberType = {
-      groupName: group.name,
-      groupColor: group.color,
-      groupNb: group.nb,
+    if (seats.length !== group.members.length) {
+      throw new Error(`Group ${group.name} has ${group.members.length} members but ${seats.length} seats`);
     }
-    seats.forEach((seat) => this.setGroupMemberAt(seat, groupMember));
+
+    seats.forEach((seat, i) => this.setGroupMemberAt(seat, group.getMemberNumber(i)));
   }
 
   /**
@@ -139,6 +141,19 @@ export class Plan {
   }
 
   /**
+   * Retourne la contrainte d'un siège (ou null)
+   * @param seat 
+   * @returns 
+   */
+  getConstraintSeatAt(seat: Seat): ConstraintSeatsType | null {
+    return this._constraintSeats.find(({ seats }) => {
+      return seats.some(({ line, col }) => {
+        return line === seat.line && col === seat.col;
+      });
+    }) ?? null;
+  }
+
+  /**
    * Place aléatoirement les groupes
    */
   public generateRandomPlan() {
@@ -156,14 +171,10 @@ export class Plan {
     let line = Math.floor(Math.random() * this._gridSize.height);
     let col = Math.floor(Math.random() * this._gridSize.width);
 
-    missingGroups.forEach(group => {
+    missingGroups.forEach((group) => {
       let remainingGroupMembers = group.nb;
-
-      const groupMember: GroupMemberType = {
-        groupName: group.name,
-        groupColor: group.color,
-        groupNb: group.nb,
-      }
+      // on prend les membres un par un
+      const groupMember: GroupMemberType | null = group.getMemberNumber(remainingGroupMembers - 1);
 
       let tries = 0;
       while (remainingGroupMembers > 0) {
@@ -208,7 +219,8 @@ export class Plan {
     let currentScore = 0;
 
     const LEFT_RIGHT = +10;
-    const TOP_BOTTOM = +5;
+    const TOP_BOTTOM = +7;
+    const MALUS = -100;
 
     this._grid.forEach((line, lineIndex) => {
       line.forEach((groupMember, colIndex) => {
@@ -238,9 +250,17 @@ export class Plan {
             currentScore += TOP_BOTTOM;
           }
 
-          // Si groupMember seul alors qu'il ne devrait pas => score impossible
+          // Si groupMember seul alors qu'il ne devrait pas => MALUS
           if (isAlone && groupMember.groupNb > 1) {
-            currentScore = -Infinity;
+            currentScore += MALUS;
+          }
+
+          // Si groupMember a une contrainte non respectée => MALUS
+          if (groupMember?.constraint) {
+            const seats = groupMember?.constraint?.seats;
+            if (!seats.find(({ line, col }) => line === lineIndex && col === colIndex)) {
+              currentScore += MALUS;
+            }
           }
 
         }
@@ -251,7 +271,7 @@ export class Plan {
   }
 
   clone(): Plan {
-    const plan = new Plan(this._gridSize, this._groups, this._forbiddenSeats);
+    const plan = new Plan(this._gridSize, this._groups, this._forbiddenSeats, this._constraintSeats);
     plan._grid = this._grid.map(line => line.map(groupMember => groupMember));
     plan.calculateScore();
 
@@ -278,6 +298,7 @@ export class Plan {
 
   /**
    * Création d'un plan à partir de 2 parents
+   * @deprecated
    * @param father 
    * @param mother 
    * @returns 
@@ -287,7 +308,7 @@ export class Plan {
       width: father.width,
       height: father.height,
     }
-    const childPlan = new Plan(gridSize, father._groups, father._forbiddenSeats);
+    const childPlan = new Plan(gridSize, father._groups, father._forbiddenSeats, father._constraintSeats);
 
     // On choisit qui va commencer (père ou mère)
     let isFatherTurn = Math.random() < 0.5;
@@ -331,7 +352,7 @@ export class Plan {
       width: father.width,
       height: father.height,
     }
-    const childPlan = new Plan(gridSize, father._groups, father._forbiddenSeats);
+    const childPlan = new Plan(gridSize, father._groups, father._forbiddenSeats, father._constraintSeats);
 
     const groups = [...father._groups];
     let remainingGroups = [...groups];

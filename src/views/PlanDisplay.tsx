@@ -1,4 +1,5 @@
 import { Plan } from '../models/Plan';
+import { Seat } from '../types/types';
 
 export const PlanDisplay: React.FC<{ plan: Plan }> = ({ plan }) => {
 
@@ -17,19 +18,30 @@ export const PlanDisplay: React.FC<{ plan: Plan }> = ({ plan }) => {
   }
 
   function renderCell(rowIndex: number, cellIndex: number) {
-    const group = plan.getGroupMemberAt({ line: rowIndex, col: cellIndex });
+    const seat: Seat = { line: rowIndex, col: cellIndex }
+    const groupMember = plan.getGroupMemberAt(seat);
     
-    let backgroundColor = group?.groupColor ?? 'initial';
+    let backgroundColor = groupMember?.groupColor ?? 'initial';
     if (plan.isForbiddenSeatAt(rowIndex, cellIndex)) {
       backgroundColor = 'grey';
     }
 
+    let border = 'initial';
+    if (plan.getConstraintSeatAt(seat)) {
+      border = '3px dotted red';
+    }
+
+    let text = '';
+    if (groupMember) text += `${groupMember?.groupName} (${groupMember.groupNb})`;
+    if (groupMember?.constraint) text += ` [${groupMember?.constraint?.id}]`;
+
+
     return (
       <td
-        key={`cell-${rowIndex}-${cellIndex}-${group?.groupName}`}
-        style={{ backgroundColor }}
+        key={`cell-${rowIndex}-${cellIndex}-${text}`}
+        style={{ backgroundColor, border }}
       >
-        { group && `${group.groupName} (${group.groupNb})` }
+        { text }
       </td>
     );
   }
