@@ -6,6 +6,7 @@ export type GridSizeType = {
 export type GroupMemberType = {
   groupName: string;
   groupColor: string;
+  groupNb: number;
 }
 
 export type GridType = Array<Array<GroupMemberType | null>>;

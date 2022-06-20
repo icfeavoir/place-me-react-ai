@@ -6,7 +6,6 @@ import { Seat, GridSizeType } from './types/types';
 import { PlanDisplay } from './views/PlanDisplay';
 import { GAService } from './services/ga.service';
 
-
 const gridSize: GridSizeType = {
   width: 16,
   height: 10
@@ -54,13 +53,15 @@ const FORBIDDEN_SEATS: Seat[] = [
 ]
 
 // nombre initial de plans
-const NB_PLANS = 100;
+const NB_PLANS = 200;
 // nombre de survivants par génération (en %)
-const SURVIVOR_PERCENT = 0.7;
+const SURVIVOR_PERCENT = 0.5;
 // nombre de nouveaux plan à chaque génération (tjr avoir le même nb de plan)
-const NB_REPRODUCTIONS = 35;  // 0.5 * NB_PLANS;
+const NB_REPRODUCTIONS = 50;  // 0.5 * NB_PLANS;
+// proba mutation
+const PROBA_MUTATION = 0.99;
 // nombre de générations
-const NB_GENERATIONS = 200;
+const NB_GENERATIONS = 2000;
 
 type ReproduceDataType = {
   reproducing: boolean;
@@ -103,38 +104,51 @@ class App extends React.Component<{}, AppData> {
     this.setState({ bestPlan : this.state.bestPlan });
   }
 
-  private calcAverage = () => {
-    return this.state.plans.reduce((acc, plan) => acc + plan.score, 0) / this.state.plans.length;
+  private startReproducing = () => {
+    if (!this.state.reproduceData.reproducing) {
+      this.setState({ reproduceData: { ...this.state.reproduceData, reproducing: true } }, () => {
+        // on laisse le temps au btn de changer (ugly!)
+        setTimeout(() => {
+          this.reproduce();
+        }, 100);
+      });
+    }
   }
 
   private reproduce = () => {
     // mesure time
     const begin = new Date();
-    if (!this.state.reproduceData.reproducing) {
-      this.setState({ reproduceData: { ...this.state.reproduceData, reproducing: true } });
 
-      let plans = this.state.plans;
-      let bestPlan = plans[0];
+    let plans = this.state.plans;
+    let bestPlan = plans[0];
 
-      for (let i = 0; i < NB_GENERATIONS; i++) {
-        plans = this.gaService.reproduce(plans, SURVIVOR_PERCENT, NB_REPRODUCTIONS,);
-        bestPlan = plans[0];
-      }
-      this.setState({ reproduceData: { ...this.state.reproduceData, nbReproduction: this.state.reproduceData.nbReproduction + NB_GENERATIONS, reproducing: false } });
-      this.setState({ bestPlan, plans });
+    for (let i = 0; i < NB_GENERATIONS; i++) {
+      plans = this.gaService.reproduce(plans, SURVIVOR_PERCENT, NB_REPRODUCTIONS, PROBA_MUTATION);
+      bestPlan = plans[0];
+    }
+    this.setState({ reproduceData: { ...this.state.reproduceData, nbReproduction: this.state.reproduceData.nbReproduction + NB_GENERATIONS, reproducing: false } });
+    this.setState({ bestPlan, plans });
 
-      const end = new Date();
+    const end = new Date();
 
-      console.log(`Finished in ${(end.getTime() - begin.getTime()) / 1000} seconds`);
+    console.log(`Finished in ${(end.getTime() - begin.getTime()) / 1000} seconds`);
+  }
+
+  private mutate = () => {
+    const plan = this.state.bestPlan;
+    const mutatedPlan = this.gaService.mutate(plan);
+    if (mutatedPlan) {
+      this.setState({ bestPlan: mutatedPlan });
     }
   }
 
   render() {
     return (
       <div className="App">
-        <button onClick={this.reproduce} disabled={this.state.reproduceData.reproducing}>
-          {this.state.reproduceData.reproducing ? 'reproducing...' : 'Reproduce!'}
+        <button onClick={this.startReproducing} disabled={this.state.reproduceData.reproducing} key={`reproduce-btn-${this.state.reproduceData.reproducing}`}>
+          { this.state.reproduceData.reproducing ? 'reproducing...' : 'Reproduce!' }
         </button>
+        {/* <button onClick={this.mutate}>Mutate!</button> */}
 
         <div id="main">
           <div id="best-plan">

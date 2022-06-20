@@ -29,7 +29,7 @@ export const PlanDisplay: React.FC<{ plan: Plan }> = ({ plan }) => {
         key={`cell-${rowIndex}-${cellIndex}-${group?.groupName}`}
         style={{ backgroundColor }}
       >
-        { group?.groupName }
+        { group && `${group.groupName} (${group.groupNb})` }
       </td>
     );
   }

@@ -34,6 +34,10 @@ export class Plan {
     return this._grid;
   }
 
+  get groups(): Group[] {
+    return this._groups;
+  }
+
   get score(): number {
     return this._score;
   }
@@ -50,7 +54,7 @@ export class Plan {
    * Retourne tous les sièges occupés par un groupe
    * @param group 
    */
-  private getGroupSeats(group: Group): Seat[] {
+  getGroupSeats(group: Group): Seat[] {
     const groupSeats: Seat[] = [];
 
     this._grid.forEach((line, lineIndex) => {
@@ -72,17 +76,31 @@ export class Plan {
     return !this.isSeatAvailable(seat);
   }
 
-  setGroupMemberAt(seat: Seat, groupMember: GroupMemberType) {
+  /**
+   * Place un groupe member sur un siège
+   * @param seat 
+   * @param groupMember 
+   */
+  setGroupMemberAt(seat: Seat, groupMember: GroupMemberType | null) {
     if (this.isForbiddenSeatAt(seat.line, seat.col)) {
       throw new Error(`Seat at line ${seat.line} col ${seat.col} is forbidden`);
     }
     
     const alreadyTaken = this.getGroupMemberAt(seat);
-    if (alreadyTaken) {
+    // on peut écraser que par null
+    if (alreadyTaken && groupMember !== null) {
       throw new Error(`Seat at line ${seat.line} col ${seat.col} is already taken by ${alreadyTaken.groupName}`);
     }
 
     this._grid[seat.line][seat.col] = groupMember;
+  }
+
+  /**
+   * Vide le siège
+   * @param seat 
+   */
+  emptySeat(seat: Seat) {
+    this.setGroupMemberAt(seat, null);
   }
 
   /**
@@ -94,6 +112,7 @@ export class Plan {
     const groupMember: GroupMemberType = {
       groupName: group.name,
       groupColor: group.color,
+      groupNb: group.nb,
     }
     seats.forEach((seat) => this.setGroupMemberAt(seat, groupMember));
   }
@@ -143,6 +162,7 @@ export class Plan {
       const groupMember: GroupMemberType = {
         groupName: group.name,
         groupColor: group.color,
+        groupNb: group.nb,
       }
 
       let tries = 0;
@@ -198,12 +218,16 @@ export class Plan {
           const groupMemberTop = this.getGroupMemberAt({ line: lineIndex + 1, col: colIndex });
           const groupMemberBottom = this.getGroupMemberAt({ line: lineIndex - 1, col: colIndex });
 
+          let isAlone = true;
+
           if (groupMemberRight?.groupName === groupMember.groupName) {
             currentScore += LEFT_RIGHT;
+            isAlone = false;
           }
 
           if (groupMemberLeft?.groupName === groupMember.groupName) {
             currentScore += LEFT_RIGHT;
+            isAlone = false;
           }
 
           if (groupMemberTop?.groupName === groupMember.groupName) {
@@ -213,6 +237,12 @@ export class Plan {
           if (groupMemberBottom?.groupName === groupMember.groupName) {
             currentScore += TOP_BOTTOM;
           }
+
+          // Si groupMember seul alors qu'il ne devrait pas => score impossible
+          if (isAlone && groupMember.groupNb > 1) {
+            currentScore = -Infinity;
+          }
+
         }
       });
     });
@@ -228,6 +258,30 @@ export class Plan {
     return plan;
   }
 
+  /**
+   * Retourne un siège aléatoire
+   * @returns {Seat}
+   */
+  getRandomSeat(): Seat {
+    const line = Math.floor(Math.random() * this._gridSize.height);
+    const col = Math.floor(Math.random() * this._gridSize.width);
+    return { line, col };
+  }
+
+  /**
+   * Retourne un groupe aléatoire
+   * @returns {Group}
+   */
+  getRandomGroup(): Group {
+    return this._groups[Math.floor(Math.random() * this._groups.length)];
+  }
+
+  /**
+   * Création d'un plan à partir de 2 parents
+   * @param father 
+   * @param mother 
+   * @returns 
+   */
   static createFromParents(father: Plan, mother: Plan): Plan {
     const gridSize = {
       width: father.width,
@@ -267,6 +321,11 @@ export class Plan {
     return childPlan;
   }
 
+  /**
+   * Création d'un plan à partir d'un seul parent
+   * @param father 
+   * @returns 
+   */
   static createFromOneParent(father: Plan): Plan {
     const gridSize = {
       width: father.width,
@@ -297,6 +356,10 @@ export class Plan {
     return childPlan;
   }
 
+  /**
+   * Permet d'afficher au format texte la grille d'un plan
+   * @returns 
+   */
   toString(): string {
     let text = '';
     this.grid.forEach((line, lineIndex) => {
