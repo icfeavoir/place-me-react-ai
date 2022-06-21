@@ -5,6 +5,7 @@ import { Plan } from './models/Plan';
 import { Seat, GridSizeType, ConstraintSeatsType } from './types/types';
 import { PlanDisplay } from './views/PlanDisplay';
 import { GAService } from './services/ga.service';
+import { Tools } from './views/Tools';
 
 const gridSize: GridSizeType = {
   width: 16,
@@ -62,15 +63,15 @@ const FORBIDDEN_SEATS: Seat[] = [
 ]
 
 // nombre initial de plans
-const NB_PLANS = 200;
+const NB_PLANS = 150;
 // nombre de survivants par génération (en %)
 const SURVIVOR_PERCENT = 0.5;
 // nombre de nouveaux plan à chaque génération (tjr avoir le même nb de plan)
 const NB_REPRODUCTIONS = 50;  // 0.5 * NB_PLANS;
 // proba mutation
-const PROBA_MUTATION = 0.9;
+const PROBA_MUTATION = 0.8;
 // nombre de générations
-const NB_GENERATIONS = 1000;
+const NB_GENERATIONS = 3000;
 
 type ReproduceDataType = {
   reproducing: boolean;
@@ -154,18 +155,23 @@ class App extends React.Component<{}, AppData> {
   render() {
     return (
       <div className="App">
-        <button onClick={this.startReproducing} disabled={this.state.reproduceData.reproducing} key={`reproduce-btn-${this.state.reproduceData.reproducing}`}>
-          { this.state.reproduceData.reproducing ? 'reproducing...' : 'Reproduce!' }
-        </button>
-        {/* <button onClick={this.mutate}>Mutate!</button> */}
+        <div className="plan-container">
+          <button onClick={this.startReproducing} disabled={this.state.reproduceData.reproducing} key={`reproduce-btn-${this.state.reproduceData.reproducing}`}>
+            { this.state.reproduceData.reproducing ? 'reproducing...' : 'Reproduce!' }
+          </button>
+          {/* <button onClick={this.mutate}>Mutate!</button> */}
 
-        <div id="main">
-          <div id="best-plan">
-            <b key={this.state.bestPlan.score}>Score: {this.state.bestPlan.score}</b><br/>
-            <b key={this.state.reproduceData.nbReproduction}>NB GENERATION: {this.state.reproduceData.nbReproduction}</b>
-            <PlanDisplay plan={this.state.bestPlan} />
+          <div id="main">
+            <div id="best-plan">
+              <b key={this.state.bestPlan.score}>Score: {this.state.bestPlan.score}</b><br/>
+              <b key={this.state.reproduceData.nbReproduction}>NB GENERATION: {this.state.reproduceData.nbReproduction}</b>
+              <PlanDisplay plan={this.state.bestPlan} />
+            </div>
           </div>
+        </div>
 
+        <div className='tools-container'>
+          <Tools />
         </div>
       </div>
     )
