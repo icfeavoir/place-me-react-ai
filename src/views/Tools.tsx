@@ -1,28 +1,60 @@
-import { useState } from 'react';
-import Slider from 'react-input-slider';
 import './Tools.css';
 
-export const Tools: React.FC = () => {
+import { useState } from 'react';
+import { Slider } from '../components/Slider';
+import { GADTO } from '../types/types';
 
-  const [test, setTest] = useState(0);
+type ToolsProps = {
+  onChange: Function;
+  defaultData: Partial<GADTO>;
+}
+
+export const Tools = ({ onChange, defaultData }: ToolsProps) => {
+
+  const [width, setWidth] = useState(defaultData?.gridSize?.width ?? 10);
+  const [height, setHeight] = useState(defaultData?.gridSize?.height ?? 10);
+
+  const [leftRightScore, setLeftRightScore] = useState(10);  // defaultData.leftRightScore
+  const [topBottomScore, setTopBottomScore] = useState(5);  // defaultData.topBottomScore);
+  
+  const [nbPlans, setNbPlans] = useState(defaultData?.nbPlans ?? 10);
+  const [survivorProportion, setSurvivorProportion] = useState(defaultData?.survivorProportion ?? 10);
+  const [nbReproductions, setNbReproductions] = useState(defaultData?.nbReproductions ?? 10);
+  const [probaMutation, setProbaMutation] = useState(defaultData?.probaMutation ?? 10);
+  const [nbGenerations, setNbGenerations] = useState(defaultData?.nbGenerations ?? 10);
+
+
+  const emitValues = () => {
+    const data: Partial<GADTO> = {
+      gridSize: { width, height },
+      // leftRightScore,
+      // topBottomScore,
+      nbPlans,
+      survivorProportion,
+      nbReproductions,
+      probaMutation,
+      nbGenerations,
+    }
+    onChange(data);
+  }
 
   return (
     <div className="tools-list">
-      <div className="grid-size">
-        <p>Largeur: {test}</p>
-        <Slider axis='x' xmin={0} xmax={100} xstep={1} x={test} onChange={({ x }) => setTest(x)} />
-        <p>Longueur</p>
+      <button onClick={emitValues}>VALIDER</button>
+      <div className="tool-group">
+        <Slider name={'Lignes'} x={height} xmin={1} xmax={15} xstep={1} onChange={setHeight} />
+        <Slider name={'Colonnes'} x={width} xmin={1} xmax={15} xstep={1} onChange={setWidth} />
       </div>
-      <div className='score'>
-        <p>Score LEFT / RIGHT</p>
-        <p>Score TOP / BOTTOM</p>
+      <div className='tool-group'>
+        <Slider name={'Droite / Gauche'} x={leftRightScore} xmin={1} xmax={30} xstep={1} onChange={setLeftRightScore} />
+        <Slider name={'Haut / Bas'} x={topBottomScore} xmin={1} xmax={30} xstep={1} onChange={setTopBottomScore} />
       </div>
-      <div className='params'>
-        <p>NB_PLANS</p>
-        <p>SURVIVOR_PERCENT</p>
-        <p>NB_REPRODUCTIONS</p>
-        <p>PROBA_MUTATION</p>
-        <p>NB_GENERATIONS</p>
+      <div className='tool-group'>
+        <Slider name={'Nombre de plans'} x={nbPlans} xmin={0} xmax={500} xstep={10} onChange={setNbPlans} />
+        <Slider name={'Proportion survivants (%)'} x={survivorProportion} xmin={0} xmax={100} xstep={1} onChange={setSurvivorProportion} />
+        <Slider name={'Nombre de reproductions'} x={nbReproductions} xmin={0} xmax={100} xstep={1} onChange={setNbReproductions} />
+        <Slider name={'Probabilité de mutation (%)'} x={probaMutation} xmin={0} xmax={100} xstep={1} onChange={setProbaMutation} />
+        <Slider name={'Nombre de générations'} x={nbGenerations} xmin={0} xmax={10000} xstep={100} onChange={setNbGenerations} />
       </div>
     </div>
   );

@@ -192,7 +192,8 @@ export class Plan {
           tries++;
           const nbSeats = this._gridSize.width * this._gridSize.height;
           if (tries > nbSeats) {
-            throw new Error('too many tries: population bigger than Plan');
+            // throw new Error('too many tries: population bigger than Plan');
+            break;
           }
         }
 

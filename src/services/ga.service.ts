@@ -42,10 +42,10 @@ export class GAService {
   /**
    * Création de nouveaux plans à partir des plans existants
    */
-  reproduce(plans: Plan[], SURVIVOR_PERCENT: number, NB_REPRODUCTIONS: number, PROBA_MUTATION: number) {
+  reproduce(plans: Plan[], SURVIVOR_PROPORTION: number, NB_REPRODUCTIONS: number, PROBA_MUTATION: number) {
     // on "tue" une partie de la population
     const bestPlans = this.sortPlans(plans);
-    const survivors = this.keepOnly(bestPlans, plans.length * SURVIVOR_PERCENT);
+    const survivors = this.keepOnly(bestPlans, plans.length * SURVIVOR_PROPORTION);
 
     // le reste peut se reproduire
     const newPlans = [];
