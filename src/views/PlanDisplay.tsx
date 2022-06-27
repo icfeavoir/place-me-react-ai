@@ -2,6 +2,8 @@ import { PlanType } from '../types/types';
 
 export const PlanDisplay: React.FC<{ plan: PlanType }> = ({ plan }) => {
 
+  const forbiddenSeats = plan?.forbiddenSeats ?? [];
+
   function renderRows() {
     const { height } = plan.gridSize;
     return <table>
@@ -23,18 +25,16 @@ export const PlanDisplay: React.FC<{ plan: PlanType }> = ({ plan }) => {
     const groupMember = placement.find(({ seat: groupMemberSeat }) => groupMemberSeat.line === rowIndex && groupMemberSeat.col === cellIndex)
     
     let backgroundColor = groupMember?.groupColor ?? 'initial';
-    // if (plan.isForbiddenSeatAt(rowIndex, cellIndex)) {
-    //   backgroundColor = 'grey';
-    // }
+    const isForbidden = forbiddenSeats.findIndex(( seat ) => seat.line === rowIndex && seat.col === cellIndex) >= 0;
+    if (isForbidden) {
+      backgroundColor = 'grey';
+    }
 
     let border = '1px solid black';
-    // if (plan.getConstraintSeatAt(seat)) {
-    //   border = '3px dotted red';
-    // }
 
     let text = '';
     if (groupMember) text += `${groupMember?.groupName} (${groupMember.groupNb})`;
-    if (groupMember?.constraint) text += ` [${groupMember?.constraint?.id}]`;
+    if (groupMember?.constraintName) text += ` [${groupMember?.constraintName}]`;
 
 
     return (

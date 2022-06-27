@@ -1,50 +1,44 @@
-import { Group } from "../models/Group";
-
 export type GridSizeType = {
   width: number;
   height: number;
 };
-
-export type GroupMemberType = {
-  groupName: string; // nom du groupe
-  groupColor: string; // couleur du groupe
-  groupNb: number; // nombre de personnes dans le groupe
-  nb: number; // numero dans le groupe
-  constraint: ConstraintSeatsType | null; // contrainte spécifique de ce membre
-}
-
-export type GridType = Array<Array<GroupMemberType | null>>;
 
 export type Seat = {
   line: number;
   col: number;
 }
 
-export type ConstraintSeatsType = {
-  id: string;
-  seats: Seat[];
+export type GroupType = {
+  name: string;
+  nb: number;
+  constraint?: GroupConstraintType;
 }
 
 export type GroupConstraintType = {
+  constraintName: string;
   nb: number;
-  constraint: ConstraintSeatsType;
 }
 
-export type SimpleGroupType = {
+export type ConstraintSeatsType = {
   name: string;
-  nb: number;
+  seats: Seat[];
 }
 
 export type GADTO = {
-  groups: SimpleGroupType[];
-  constraints: ConstraintSeatsType[];
+  groups: GroupType[];
   gridSize: GridSizeType;
   forbiddenSeats: Seat[];
+  constraints: ConstraintSeatsType[];
   nbPlans: number;
   survivorProportion: number;
   nbReproductions: number;
   probaMutation: number;
   nbGenerations: number;
+  scores: {
+    leftRightScore: number;
+    topBottomScore: number;
+    malusScore: number;
+  };
 }
 
 export type GAResponseDTO = {
@@ -52,10 +46,22 @@ export type GAResponseDTO = {
   bestPlan: PlanType;
   bestScore: number;
   time: number;
+  error?: string;
 }
 
 export type PlanType = {
   gridSize: GridSizeType;
-  placement: any[];
+  placement: PlacementType[];
+  forbiddenSeats?: Seat[];
   score: number;
+}
+
+// placement from server
+export type PlacementType = {
+  groupName: string;
+  groupColor: string;
+  constraintName: string;
+  groupNb: number;
+  nb: number;
+  seat: Seat;
 }

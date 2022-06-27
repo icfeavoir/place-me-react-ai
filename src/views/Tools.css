@@ -2,3 +2,9 @@ div.tool-group {
   margin: 1rem 0;
   border: 1px solid black;
 }
+
+span.tool-title {
+  background-color: grey;
+  color: white;
+  padding: 0 1rem .3rem;
+}

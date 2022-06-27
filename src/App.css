@@ -13,9 +13,18 @@ td {
   text-align: center;
 }
 
+div.plan-container {
+  /* take max space */
+  flex-grow: 1;
+}
+
 div.tools-container {
   border: 1px solid black;
   width: 33%;
   margin: 5px;
   padding: 5px;
+}
+
+p.error {
+  color: darkred;
 }
