@@ -1,16 +1,14 @@
 import './App.css';
 import React from 'react';
+import { socket } from './services/socket';
 
 import { ConstraintSeatsType, GADTO, GAResponseDTO, GroupType, PlanType } from './types/types';
 import { PlanDisplay } from './views/PlanDisplay';
 import { Tools } from './views/Tools';
-import { callGA } from './services/ai.service';
 
 import { GROUPS } from './assets/groups/dm-groups';
 import { genPremierRangContraint } from './assets/constraints/constraints';
 import { FORBIDDEN_SEATS } from './assets/forbiddenSeats/random';
-
-// const SOCKET_ENDPOINT = 'http://localhost:3000';
 
 type AppData = {
   bestPlan: PlanType | null;
@@ -74,16 +72,37 @@ class App extends React.Component<{}, AppData> {
     }
 
     this.generateConstraints();
+
+    socket.on('loading', this.updateLoadingState.bind(this));
+    socket.on('done', this.onGenerateFinished.bind(this));
   }
 
-  // Socket
-  // useEffect(() => {
-  //   const socket = socketIOClient(SOCKET_ENDPOINT);
-  //   socket.on('generatingLoader', (data) => {
-  //     console.log(data);
-  //   });
-  // });
+  /**
+   * Quand on reçoit l'event de loading
+   */
+  private updateLoadingState(str: string) {
+    this.setState({ loading: str});
+  }
 
+  /**
+   * Quand le GA est terminé
+   */
+  private onGenerateFinished({ error, averageScore, bestPlan, time }: GAResponseDTO) {
+    if (error) {
+      this.setState({ error: `ERR: ${error}` });
+    }
+
+    this.setState({
+      bestPlan,
+      gaResponseData: { averageScore, time },
+    })
+
+    this.setState({ reproducing: false });
+  }
+
+  /**
+   * Quand une valeur change (TOOLS)
+   */
   private onChange(data: GADTO) {
     this.GAData = { ...this.GAData, ...data };
 
@@ -93,11 +112,17 @@ class App extends React.Component<{}, AppData> {
     this.generateConstraints();
   }
 
+  /**
+   * Re génère les contraintes
+   */
   private generateConstraints() {
     const CONSTRAINT_PREMIER_RANG: ConstraintSeatsType = genPremierRangContraint(this.GAData.gridSize);
     this.GAData.constraints = [CONSTRAINT_PREMIER_RANG];
   }
 
+  /**
+   * Envoie l'event au server
+   */
   private callGA = async () => {
     this.setState({
       reproducing: true,
@@ -105,22 +130,12 @@ class App extends React.Component<{}, AppData> {
       gaResponseData: { averageScore: 0, time: 0 },
     });
 
-    try {
-      const { error, averageScore, bestPlan, time }: GAResponseDTO = await callGA(this.GAData);
-      if (error) {
-        this.setState({ error: `ERR: ${error}` });
-      }
-
-      this.setState({
-        bestPlan,
-        gaResponseData: { averageScore, time },
-      })
-    } catch (err) {
-    } finally {
-      this.setState({ reproducing: false });
-    }
+    socket.emit('generate', this.GAData);  
   }
 
+  /**
+   * HTML
+   */
   render() {
     return (
       <div className="App">
