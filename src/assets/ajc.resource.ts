@@ -1,6 +1,10 @@
-export const GROUPS = [
+import { GroupType, Seat } from "../types/types";
+
+export const WIDTH = 24;
+export const HEIGHT = 9;
+
+export const GROUPS: GroupType[] = [
   { name: "Madi.L", nb: 5 },
-  { name: "Leco.A", nb: 6 },
   { name: "Leco.A", nb: 6 },
   { name: "Maingu", nb: 2 },
   { name: "Bour.R", nb: 2 },
@@ -32,4 +36,39 @@ export const GROUPS = [
   { name: "Less.B", nb: 1 },
   { name: "Yver.M", nb: 3 },
   { name: "Les vieux", nb: 33 },
+];
+
+export const FORBIDDEN_SEATS: Seat[] = [
+  { line: 1, col: 6},
+  { line: 2, col: 6},
+  { line: 3, col: 6},
+  { line: 4, col: 6},
+  { line: 5, col: 6},
+  { line: 6, col: 6},
+  { line: 7, col: 6},
+  { line: 8, col: 6},
+  { line: 1, col: 7},
+  { line: 2, col: 7},
+  { line: 3, col: 7},
+  { line: 4, col: 7},
+  { line: 5, col: 7},
+  { line: 6, col: 7},
+  { line: 7, col: 7},
+  { line: 8, col: 7},
+  { line: 1, col: 16},
+  { line: 2, col: 16},
+  { line: 3, col: 16},
+  { line: 4, col: 16},
+  { line: 5, col: 16},
+  { line: 6, col: 16},
+  { line: 7, col: 16},
+  { line: 8, col: 16},
+  { line: 1, col: 17},
+  { line: 2, col: 17},
+  { line: 3, col: 17},
+  { line: 4, col: 17},
+  { line: 5, col: 17},
+  { line: 6, col: 17},
+  { line: 7, col: 17},
+  { line: 8, col: 17},
 ];

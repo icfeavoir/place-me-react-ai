@@ -6,9 +6,9 @@ import { ConstraintSeatsType, GADTO, GAResponseDTO, GroupType, PlanType } from '
 import { PlanDisplay } from './views/PlanDisplay';
 import { Tools } from './views/Tools';
 
-import { GROUPS } from './assets/groups/dm-groups';
 import { genPremierRangContraint } from './assets/constraints/constraints';
-import { FORBIDDEN_SEATS } from './assets/forbiddenSeats/random';
+import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/ajc.resource';
+// import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/dm.resource';
 
 type AppData = {
   bestPlan: PlanType | null;
@@ -17,9 +17,6 @@ type AppData = {
   error: string;
   gaResponseData: { averageScore: number, time: number };
 };
-
-const WIDTH = 10;
-const HEIGHT = 10;
 
 const LEFT_RIGHT_SCORE = 10;
 const TOP_BOTTOM_SCORE = 5;
@@ -30,9 +27,9 @@ const NB_PLANS = 100;
 // % de survivants par génération
 const SURVIVOR_PERCENT = 50;
 // nombre de nouveaux plan à chaque génération (tjr avoir le même nb de plan)
-const NB_REPRODUCTIONS = 50;  // 0.5 * NB_PLANS;
+const NB_REPRODUCTIONS = 50;
 // proba mutation (%)
-const PROBA_MUTATION_PERCENT = 0;
+const PROBA_MUTATION_PERCENT = 50;
 // nombre de générations
 const NB_GENERATIONS = 100;
 
@@ -64,7 +61,7 @@ class App extends React.Component<{}, AppData> {
 
     // default state
     this.state = {
-      bestPlan: { gridSize: this.GAData.gridSize, placement: [], score: 0},
+      bestPlan: { gridSize: this.GAData.gridSize, placement: [], forbiddenSeats: FORBIDDEN_SEATS, score: 0},
       reproducing: false,
       loading: 'Loading...',
       error: '',
@@ -107,7 +104,7 @@ class App extends React.Component<{}, AppData> {
     this.GAData = { ...this.GAData, ...data };
 
     this.setState({
-      bestPlan: { gridSize: this.GAData.gridSize, placement: [], score: 0 },
+      bestPlan: { gridSize: this.GAData.gridSize, placement: [], forbiddenSeats: FORBIDDEN_SEATS, score: 0 },
     });
     this.generateConstraints();
   }

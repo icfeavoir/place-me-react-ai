@@ -1,4 +1,7 @@
-import { GroupType } from "../../types/types";
+import { Seat, GroupType } from "../types/types";
+
+export const WIDTH = 8;
+export const HEIGHT = 6;
 
 export const GROUPS: GroupType[] = [
   { name: 'Seb', nb: 3 },
@@ -16,3 +19,12 @@ export const GROUPS: GroupType[] = [
   { name: 'Elise', nb: 1 },
   { name: 'Hugo', nb: 1 },
 ];
+
+export const FORBIDDEN_SEATS: Seat[] = [
+  { line: 0, col: 4},
+  { line: 0, col: 5},
+  { line: 0, col: 6},
+  { line: 0, col: 7},
+  { line: 0, col: 8},
+  { line: 5, col: 8},
+]
