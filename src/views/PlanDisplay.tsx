@@ -6,7 +6,7 @@ export const PlanDisplay: React.FC<{ plan: PlanType }> = ({ plan }) => {
 
   function renderRows() {
     const { height } = plan.gridSize;
-    return <table>
+    return <table className='plan-table'>
       <tbody>
         { Array.from({ length: height }, (_, rowIndex) => renderRow(rowIndex)) }
       </tbody>

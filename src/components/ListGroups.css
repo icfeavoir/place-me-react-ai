@@ -1,0 +1,11 @@
+div.groups-container {
+  margin: 1rem 0;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+div.group-item {
+  border: 1px solid black;
+  margin: .1rem;
+  padding: .2rem;
+}

@@ -54,7 +54,7 @@ export const Tools = ({ onChange, defaultData }: ToolsProps) => {
         <span className='tool-title'>Score</span>
         <Slider name={'Droite / Gauche'} x={leftRightScore} xmin={1} xmax={30} xstep={1} onChange={setLeftRightScore} />
         <Slider name={'Haut / Bas'} x={topBottomScore} xmin={1} xmax={30} xstep={1} onChange={setTopBottomScore} />
-        <Slider name={'Malus'} x={malusScore} xmin={-100} xmax={0} xstep={1} onChange={setMalusScore} />
+        <Slider name={'Malus'} x={malusScore} xmin={-1000} xmax={0} xstep={1} onChange={setMalusScore} />
       </div>
       <div className='tool-group'>
         <span className='tool-title'>Paramètres</span>

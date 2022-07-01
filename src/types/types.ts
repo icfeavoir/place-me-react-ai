@@ -11,6 +11,7 @@ export type Seat = {
 export type GroupType = {
   name: string;
   nb: number;
+  color: string;
   constraint?: GroupConstraintType;
 }
 
@@ -46,6 +47,7 @@ export type GAResponseDTO = {
   bestPlan: PlanType;
   bestScore: number;
   time: number;
+  genOfBestPlan: GenScoreType;
   error?: string;
 }
 
@@ -64,4 +66,15 @@ export type PlacementType = {
   groupNb: number;
   nb: number;
   seat: Seat;
+}
+
+// loading sent socket
+export type LoadingType = {
+  current: number;
+  total: number;
+}
+
+export type GenScoreType = {
+  generation: number;
+  score: number;
 }

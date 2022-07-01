@@ -3,14 +3,18 @@ table {
   border-collapse: collapse;
 }
 
-table, td {
+table, td, th {
   border: 1px solid;
 }
 
-td {
+.plan-table td {
   width: 50px;
   height: 50px;
   text-align: center;
+}
+
+.gen-score-table td, .gen-score-table th {
+  width: 150px;
 }
 
 div.plan-container {
@@ -27,4 +31,9 @@ div.tools-container {
 
 p.error {
   color: darkred;
+}
+
+button#generate-btn {
+  font-size: 20px;
+  margin-left: 1rem;
 }

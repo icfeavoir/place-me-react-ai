@@ -1,19 +1,25 @@
 import './App.css';
 import React from 'react';
-import { socket } from './services/socket';
+import { io, Socket } from 'socket.io-client';
 
-import { ConstraintSeatsType, GADTO, GAResponseDTO, GroupType, PlanType } from './types/types';
+import { ConstraintSeatsType, GADTO, GAResponseDTO, LoadingType, PlanType } from './types/types';
 import { PlanDisplay } from './views/PlanDisplay';
 import { Tools } from './views/Tools';
+import { GenScoreTable } from './views/GenScoreTable';
+import { ListGroups } from './components/ListGroups';
 
 import { genPremierRangContraint } from './assets/constraints/constraints';
-import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/ajc.resource';
+
+import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/dm-simple.resource';
 // import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/dm.resource';
+// import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/ajc.resource';
 
 type AppData = {
   bestPlan: PlanType | null;
+  genOfBestPlan: number;
+  genAndScoreMap: Map<number, number>; // generationI => scoreX
   reproducing: boolean;
-  loading: string;
+  loadingText: string;
   error: string;
   gaResponseData: { averageScore: number, time: number };
 };
@@ -37,13 +43,13 @@ const NB_GENERATIONS = 100;
 class App extends React.Component<{}, AppData> {
 
   private GAData: GADTO;
-  private groups: GroupType[] = GROUPS;
+  private socket: Socket;
 
   constructor(props: object) {
     super(props);
 
     this.GAData = {
-      groups: this.groups,
+      groups: GROUPS,
       gridSize: { width: WIDTH, height: HEIGHT },
       forbiddenSeats: FORBIDDEN_SEATS,
       constraints: [],
@@ -61,30 +67,70 @@ class App extends React.Component<{}, AppData> {
 
     // default state
     this.state = {
-      bestPlan: { gridSize: this.GAData.gridSize, placement: [], forbiddenSeats: FORBIDDEN_SEATS, score: 0},
+      bestPlan: { gridSize: this.GAData.gridSize, placement: [], forbiddenSeats: FORBIDDEN_SEATS, score: 0 },
+      genOfBestPlan: 0,
+      genAndScoreMap: new Map(),
       reproducing: false,
-      loading: 'Loading...',
+      loadingText: '',
       error: '',
       gaResponseData: { averageScore: 0, time: 0 },
     }
 
     this.generateConstraints();
 
-    socket.on('loading', this.updateLoadingState.bind(this));
-    socket.on('done', this.onGenerateFinished.bind(this));
+    this.socket = io('http://localhost:3000');
+  }
+
+  componentDidMount() {
+    if (this.socket === null) {
+      this.socket = io('http://localhost:3000');
+    }
+
+    if (this.socket) {
+      this.socket.on('loading', this.updateLoadingState.bind(this));
+      this.socket.on('current-gen', this.updateCurrentPlan.bind(this));
+      this.socket.on('done', this.onGenerateFinished.bind(this));
+    }
   }
 
   /**
    * Quand on reçoit l'event de loading
    */
-  private updateLoadingState(str: string) {
-    this.setState({ loading: str});
+  private updateLoadingState({ current, total }: LoadingType) {
+    if (total === 0) return;
+
+    if (!this.state.reproducing) {
+      this.setState({ reproducing: true });
+    }
+
+    const loadingText = `Génération: ${Math.round((current / total) * 100)}% (${current}/${total})`;
+    this.setState({ loadingText });
+  }
+
+  /**
+   * Quand on reçoit l'event de current-gen
+   * On met à jour le plan
+   */
+  private updateCurrentPlan({ bestPlan, genOfBestPlan }: Partial<GAResponseDTO>) {
+    if (!bestPlan || !genOfBestPlan) return;
+    
+    const currentMap = this.state.genAndScoreMap;
+    if (!currentMap.has(genOfBestPlan.generation)) {
+      currentMap.set(genOfBestPlan.generation, genOfBestPlan.score);
+      console.log(currentMap);
+    }
+
+    this.setState({
+      bestPlan,
+      genOfBestPlan: genOfBestPlan.generation,
+      genAndScoreMap: currentMap,
+    });
   }
 
   /**
    * Quand le GA est terminé
    */
-  private onGenerateFinished({ error, averageScore, bestPlan, time }: GAResponseDTO) {
+  private onGenerateFinished({ error, averageScore, bestPlan, time, genOfBestPlan }: GAResponseDTO) {
     if (error) {
       this.setState({ error: `ERR: ${error}` });
     }
@@ -92,6 +138,7 @@ class App extends React.Component<{}, AppData> {
     this.setState({
       bestPlan,
       gaResponseData: { averageScore, time },
+      genOfBestPlan: genOfBestPlan.generation
     })
 
     this.setState({ reproducing: false });
@@ -103,9 +150,7 @@ class App extends React.Component<{}, AppData> {
   private onChange(data: GADTO) {
     this.GAData = { ...this.GAData, ...data };
 
-    this.setState({
-      bestPlan: { gridSize: this.GAData.gridSize, placement: [], forbiddenSeats: FORBIDDEN_SEATS, score: 0 },
-    });
+    this.reset();
     this.generateConstraints();
   }
 
@@ -121,13 +166,24 @@ class App extends React.Component<{}, AppData> {
    * Envoie l'event au server
    */
   private callGA = async () => {
-    this.setState({
-      reproducing: true,
-      error: '',
-      gaResponseData: { averageScore: 0, time: 0 },
-    });
+    this.reset();
+    this.setState({ reproducing: true });
+    this.socket.emit('generate', this.GAData);  
+  }
 
-    socket.emit('generate', this.GAData);  
+  /**
+   * Reset data
+   */
+  private reset = () => {
+    this.setState({
+      bestPlan: { gridSize: this.GAData.gridSize, placement: [], forbiddenSeats: FORBIDDEN_SEATS, score: 0 },
+      reproducing: false,
+      gaResponseData: { averageScore: 0, time: 0 },
+      genOfBestPlan: 0,
+      genAndScoreMap: new Map(),
+      loadingText: '',
+      error: '',
+    });
   }
 
   /**
@@ -138,9 +194,11 @@ class App extends React.Component<{}, AppData> {
       <div className="App">
         <div className="plan-container">
 
-          <button onClick={this.callGA} disabled={this.state.reproducing}>
+          <ListGroups groups={GROUPS} />
+
+          <button id="generate-btn" onClick={this.callGA} disabled={this.state.reproducing}>
             {
-              this.state.reproducing ? this.state.loading : 'GENERATE!'
+              this.state.reproducing ? this.state.loadingText : 'GENERATE!'
             }
           </button>
 
@@ -149,7 +207,9 @@ class App extends React.Component<{}, AppData> {
             {
               this.state.bestPlan && (
                 <div id="best-plan" key={this.state.bestPlan.score}>
-                  <b key={this.state.bestPlan.score}>Score: {this.state.bestPlan.score}</b><br/>
+                  <b key={this.state.bestPlan.score}>Score: {this.state.bestPlan.score}</b><br />
+                  <b>Génération du meilleur score: {this.state.genOfBestPlan} </b>
+
                   {this.state.gaResponseData.time > 0 && (
                     <p key={this.state.gaResponseData.time}>Calculé en {this.state.gaResponseData.time} secondes.</p>
                   )}
@@ -158,6 +218,8 @@ class App extends React.Component<{}, AppData> {
               )
             }
           </div>
+
+          {this.state.genAndScoreMap.size > 0 && <GenScoreTable map={this.state.genAndScoreMap} />}
         </div>
 
         <div className='tools-container'>
