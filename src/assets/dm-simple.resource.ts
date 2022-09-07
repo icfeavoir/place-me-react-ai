@@ -16,7 +16,7 @@ export const GROUPS: GroupType[] = [
   { name: 'Simon', nb: 5, color: 'white' },
   { name: 'Thomas', nb: 6, color: 'palegoldenrod' },
   { name: 'Nicolas', nb: 3, color: 'floralwhite' },
-  { name: 'Elise', nb: 1, color: 'salmon' },
+  { name: 'Elise', nb: 3, color: 'salmon' },
   { name: 'Hugo', nb: 1, color: 'peachpuff' },
   { name: 'Fabien', nb: 4, color: 'forestgreen'}
 ];

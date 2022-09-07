@@ -10,6 +10,7 @@ import { ListGroups } from './components/ListGroups';
 
 import { genPremierRangContraint } from './assets/constraints/constraints';
 
+// import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/test.resource';
 import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/dm-simple.resource';
 // import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/dm.resource';
 // import { GROUPS, FORBIDDEN_SEATS, WIDTH, HEIGHT } from './assets/ajc.resource';
@@ -26,19 +27,18 @@ type AppData = {
 
 const LEFT_RIGHT_SCORE = 10;
 const TOP_BOTTOM_SCORE = 5;
-const MALUS_SCORE = -100;
+const MALUS_SCORE = -50;
 
 // nombre initial de plans
 const NB_PLANS = 100;
 // % de survivants par génération
-const SURVIVOR_PERCENT = 50;
+const SURVIVOR_PERCENT = 65;
 // nombre de nouveaux plan à chaque génération (tjr avoir le même nb de plan)
-const NB_REPRODUCTIONS = 50;
+const NB_REPRODUCTIONS = 35;
 // proba mutation (%)
-const PROBA_MUTATION_PERCENT = 50;
+const PROBA_MUTATION_PERCENT = 15;
 // nombre de générations
 const NB_GENERATIONS = 100;
-
 
 class App extends React.Component<{}, AppData> {
 
@@ -167,7 +167,7 @@ class App extends React.Component<{}, AppData> {
    */
   private callGA = async () => {
     this.reset();
-    this.setState({ reproducing: true });
+    this.setState({ reproducing: true, loadingText: 'Loading...' });
     this.socket.emit('generate', this.GAData);  
   }
 

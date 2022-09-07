@@ -1,5 +1,9 @@
 import { Seat, GroupType } from "../types/types";
 
+// NEW:
+// CONTRAINTES DE PLACEMENTS (Premier rang)
+// SIEGES INTERDITS
+
 export const WIDTH = 9;
 export const HEIGHT = 6;
 
@@ -25,5 +29,6 @@ export const FORBIDDEN_SEATS: Seat[] = [
   { line: 0, col: 4},
   { line: 0, col: 5},
   { line: 0, col: 6},
-  { line: 5, col: 2},
+  { line: 5, col: 1},
+  { line: 5, col: 2}, // PAS CONCLUANT ENCORE
 ]

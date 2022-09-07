@@ -42,6 +42,12 @@ export const Tools = ({ onChange, defaultData }: ToolsProps) => {
     onChange(data);
   }
 
+  const fixReproductionNb = () => {
+    const kept = nbPlans * survivorProportion / 100;
+    const nbToCreate = Math.floor(nbPlans - kept);
+    setNbReproductions(nbToCreate);
+  }
+
   return (
     <div className="tools-list">
       <button onClick={emitValues}>VALIDER</button>
@@ -54,15 +60,15 @@ export const Tools = ({ onChange, defaultData }: ToolsProps) => {
         <span className='tool-title'>Score</span>
         <Slider name={'Droite / Gauche'} x={leftRightScore} xmin={1} xmax={30} xstep={1} onChange={setLeftRightScore} />
         <Slider name={'Haut / Bas'} x={topBottomScore} xmin={1} xmax={30} xstep={1} onChange={setTopBottomScore} />
-        <Slider name={'Malus'} x={malusScore} xmin={-1000} xmax={0} xstep={1} onChange={setMalusScore} />
+        <Slider name={'Malus'} x={malusScore} xmin={-500} xmax={0} xstep={1} onChange={setMalusScore} />
       </div>
       <div className='tool-group'>
         <span className='tool-title'>Paramètres</span>
         <Slider name={'Nombre de plans'} x={nbPlans} xmin={0} xmax={500} xstep={10} onChange={setNbPlans} />
         <Slider name={'Proportion survivants (%)'} x={survivorProportion} xmin={0} xmax={100} xstep={1} onChange={setSurvivorProportion} />
-        <Slider name={'Nombre de reproductions'} x={nbReproductions} xmin={0} xmax={100} xstep={1} onChange={setNbReproductions} />
+        <Slider onClick={fixReproductionNb} name={'Nombre de reproductions'} x={nbReproductions} xmin={0} xmax={100} xstep={1} onChange={setNbReproductions} />
         <Slider name={'Probabilité de mutation (%)'} x={probaMutation} xmin={0} xmax={100} xstep={1} onChange={setProbaMutation} />
-        <Slider name={'Nombre de générations'} x={nbGenerations} xmin={0} xmax={5000} xstep={50} onChange={setNbGenerations} />
+        <Slider name={'Nombre de générations'} x={nbGenerations} xmin={0} xmax={5000} xstep={25} onChange={setNbGenerations} />
       </div>
     </div>
   );

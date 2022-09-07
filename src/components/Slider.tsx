@@ -8,13 +8,14 @@ type SliderProps = {
   xmax: number;
   xstep: number;
   onChange: Function;
+  onClick?: Function;
 }
 
-export const Slider = ({ name, x, xmin, xmax, xstep, onChange }: SliderProps) => {
+export const Slider = ({ name, x, xmin, xmax, xstep, onChange, onClick = () => {} }: SliderProps) => {
 
   return (
     <div className='slider-container'>
-      <p>{name}</p>
+      <p onClick={() => onClick()}>{name}</p>
       <span className='slider'>
         <InputSlider xmin={xmin} xmax={xmax} xstep={xstep} x={x} onChange={({ x }) => onChange(x)} />
       </span>
